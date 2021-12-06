@@ -40,8 +40,10 @@ def create_input(train_eval_config,
   data_files = tf.io.gfile.glob(dataset_config.data_files)
   name_to_features = {}
   modality_to_params = inputs_util.get_modality_to_param_dict(dataset_config)
+  #modality_to_params{"motion":{},"audio":{}}
 
   for modality in modality_to_params:
+    #似乎没有用
     if modality == "visual":
       name_to_features.update({
           f"{modality}_sequence": tf.io.VarLenFeature(tf.string),
@@ -53,7 +55,8 @@ def create_input(train_eval_config,
           f"{modality}_sequence_shape": tf.io.FixedLenFeature([2], tf.int64),
           f"{modality}_name": tf.io.FixedLenFeature([], tf.string),
       })
-
+  #{motion_sequence:{},audio_sequence:{}}
+  #配置文件中么有这个key
   if dataset_config.data_target_field:
     name_to_features.update(
         {dataset_config.data_target_field: tf.io.VarLenFeature(tf.int64)})
@@ -61,8 +64,8 @@ def create_input(train_eval_config,
   # For training, we want a lot of parallel reading and shuffling.
   # For eval, we want no shuffling and parallel reading doesn't matter.
   if is_training:
-    ds = tf.data.Dataset.from_tensor_slices(tf.constant(data_files))
-    ds = ds.interleave(
+    ds = tf.data.Dataset.from_tensor_slices(tf.constant(data_files))#就是从一个由很多数据对的数组，创建一个数据集
+    ds = ds.interleave(#似乎是为了能够多线程的读数据
         tf.data.TFRecordDataset,
         cycle_length=tf.data.AUTOTUNE,
         num_parallel_calls=tf.data.AUTOTUNE,

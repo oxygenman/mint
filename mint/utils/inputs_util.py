@@ -55,7 +55,7 @@ def preprocess_labels(example, dataset_config):
       axis=0)
   return example
 
-
+#输入数据的预处理
 def fact_preprocessing(example, modality_to_params, is_training):
   """Preprocess data for FACT model."""
   motion_seq_length = tf.shape(example["motion_sequence"])[0]
@@ -68,14 +68,17 @@ def fact_preprocessing(example, modality_to_params, is_training):
   audio_dim = modality_to_params["audio"]["feature_dim"]
 
   # Pad the input motion translation from 3-dim to 9-dim.
+  #why?
   motion_dim += 6
   example["motion_sequence"] = tf.pad(example["motion_sequence"],
                                       [[0, 0], [6, 0]])
   if is_training:
     windows_size = tf.maximum(motion_input_length,
-                              motion_target_shift + motion_target_length)
-    windows_size = tf.maximum(windows_size, audio_input_length)
+                         motion_target_shift + motion_target_length)
+    #xy 该
+    #windows_size = tf.maximum(windows_size, audio_input_length)
     # the start frame id for this window.
+    #随机切割frame
     start = tf.random.uniform([],
                               0,
                               motion_seq_length - windows_size + 1,
@@ -97,9 +100,12 @@ def fact_preprocessing(example, modality_to_params, is_training):
   del example["motion_sequence"]
 
   if is_training:
-    # audio input: [start, start + audio_input_length)
+    #audio input: [start, start + audio_input_length)
     example["audio_input"] = example["audio_sequence"][start:start +
                                                       audio_input_length, :]
+    example["audio_future_input"] = example["audio_sequence"][start +
+                                                     audio_input_length:start+audio_input_length+motion_target_length, :]
+    example["audio_future_input"].set_shape([motion_target_length,audio_dim])
     example["audio_input"].set_shape([audio_input_length, audio_dim])
   else:
     example["audio_input"] = example["audio_sequence"]

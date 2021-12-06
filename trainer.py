@@ -30,8 +30,8 @@ FLAGS = flags.FLAGS
 flags.DEFINE_enum('train_strategy', TRAIN_STRATEGY[1], TRAIN_STRATEGY,
                   'Whether to train with TPUs or Mirrored GPUs.')
 flags.DEFINE_string('master', None, 'BNS name of the TensorFlow tpu to use.')
-flags.DEFINE_string('config_path', None, 'Path to the config file.')
-flags.DEFINE_string('model_dir', None,
+flags.DEFINE_string('config_path', "./configs/fact_v5_deeper_t10_cm12.config", 'Path to the config file.')
+flags.DEFINE_string('model_dir', "./checkpoints/",
                     'Directory to write training checkpoints and logs')
 flags.DEFINE_float('initial_learning_rate', 0.1,
                    'Initial learning rate for cosine decay schedule')
@@ -39,10 +39,10 @@ flags.DEFINE_string(
     'head_initializer', 'he_normal',
     'Initializer for prediction head. Valid options are any '
     'of the tf.keras.initializers.')
-flags.DEFINE_integer('steps', 2400000, 'Number of training steps')
+flags.DEFINE_integer('steps', 2500000, 'Number of training steps')
 flags.DEFINE_integer('warmup_steps', 1000,
                      'Number of learning rate warmup steps')
-flags.DEFINE_float('weight_decay', None, 'L2 regularization penalty to apply.')
+flags.DEFINE_float('weight_decay', 1e-9, 'L2 regularization penalty to apply.')
 flags.DEFINE_float('grad_clip_norm', 0., 'Clip gradients by norm.')
 
 
@@ -146,6 +146,7 @@ def train():
   dataset = strategy.distribute_datasets_from_function(get_dataset_fn(configs))
   with strategy.scope():
     model_ = model_builder.build(model_config, True)
+    print("model:",model_)
     lr_schedule = _create_learning_rate(train_config.learning_rate)
     optimizer = tf.keras.optimizers.Adam(lr_schedule)
     model_.global_step = optimizer.iterations

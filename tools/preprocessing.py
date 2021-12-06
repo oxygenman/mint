@@ -78,7 +78,7 @@ def cache_audio_features(seq_names):
     FPS = 60
     HOP_LENGTH = 512
     SR = FPS * HOP_LENGTH
-    EPS = 1e-6
+    EPS =  1e-6
 
     def _get_tempo(audio_name):
         """Get tempo (BPM) for a music by parsing music name."""

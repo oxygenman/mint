@@ -27,9 +27,9 @@ import tensorflow as tf
 
 FLAGS = flags.FLAGS
 
-flags.DEFINE_string('model_dir', None,
+flags.DEFINE_string('model_dir', "./checkpoints",
                     'Directory to write training checkpoints and logs')
-flags.DEFINE_string('config_path', None, 'Path to the config file.')
+flags.DEFINE_string('config_path', "./configs/fact_v5_deeper_t10_cm12.config", 'Path to the config file.')
 flags.DEFINE_string('eval_prefix', 'valid', 'Prefix for evaluation summaries.')
 flags.DEFINE_string('output_dir', 'outputs', 'Where to save the results.')
 

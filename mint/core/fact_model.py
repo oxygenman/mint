@@ -20,6 +20,8 @@ from mint.core import base_models
 from mint.core import metrics
 from mint.core import multi_modal_model
 from mint.core import multi_modal_model_util
+#引入经典transformer
+from mint.core import origin_transformer_model
 import tensorflow as tf
 
 
@@ -37,11 +39,13 @@ class FACTModel(multi_modal_model.MultiModalModel):
     super().__init__(is_training)
     self.config = copy.deepcopy(config)
     self.is_training = is_training
+    print(self.config.modality)
     (self.feature_to_model, self.feature_to_params, self.feature_to_preprocessor
     ) = multi_modal_model_util.build_modalities_model(self.config.modality)
+    self.feature_to_output=self.config.cross_modal_model.output_layer
 
-    self.cross_modal_layer = base_models.CrossModalLayer(
-        self.config.cross_modal_model, is_training=self.is_training)
+    #self.cross_modal_layer = base_models.CrossModalLayer(
+    #    self.config.cross_modal_model, is_training=self.is_training)
     motion_transformer_config = self.feature_to_model["motion"][
         "transformer_layer"]
     audio_transformer_config = self.feature_to_model["audio"][
@@ -68,6 +72,13 @@ class FACTModel(multi_modal_model.MultiModalModel):
         audio_transformer_config.hidden_size)
     self.audio_linear_embedding = base_models.LinearEmbedding(
         audio_transformer_config.hidden_size)
+    #xy 经典transformer
+    self.decoder_config=self.feature_to_model["motion"]["transformer_layer"]
+    #
+    self.target_length=20
+    self.decoder=origin_transformer_model.Decoder(self.decoder_config.num_hidden_layers,self.decoder_config.hidden_size,self.decoder_config.num_attention_heads,self.decoder_config.hidden_size,self.target_length)
+    self.final_layer = tf.keras.layers.Dense(self.feature_to_output.out_dim)
+
 
   def call(self, inputs):
     """Predict sequences from inputs. 
@@ -96,7 +107,18 @@ class FACTModel(multi_modal_model.MultiModalModel):
     audio_features = self.audio_transformer(audio_features)
 
     # Computes cross modal output.
-    output = self.cross_modal_layer(motion_features, audio_features)
+    #output = self.cross_modal_layer(motion_features, audio_features)
+
+    #xy 添加一个audio的输入，将它输入传统的decoder中
+    audio_future_input = inputs["audio_future_input"];
+    print("audio_future_input.shape",audio_future_input.shape)
+    merged_sequences = tf.concat([motion_features, audio_features],axis=1)
+    print("merged_sequences.shape:",merged_sequences.shape)
+    #创建look_ahead_mask_
+    look_ahead_mask =origin_transformer_model.create_look_ahead_mask(audio_future_input.shape[1])
+    output,_=self.decoder(audio_future_input,merged_sequences,self.is_training, look_ahead_mask=None,padding_mask=None)
+    output = self.final_layer(output)
+    print("output.shape:",output.shape)
 
     return output
 
@@ -122,13 +144,17 @@ class FACTModel(multi_modal_model.MultiModalModel):
     motion_input = inputs["motion_input"]
     for i in range(steps):
       audio_input = inputs["audio_input"][:, i: i + audio_seq_length]
+      #xy
+      audio_future_input = inputs["audio_input"][:,i+audio_seq_length:i+audio_seq_length+self.target_length]
       if tf.shape(audio_input)[1] < audio_seq_length:
-        break
-      output = self.call({"motion_input": motion_input, "audio_input": audio_input})
-      output = output[:, 0:1, :]  # only keep the first frame
+            break
+      if tf.shape(audio_future_input)[1]<self.target_length:
+            break
+      output = self.call({"motion_input": motion_input, "audio_input": audio_input,"audio_future_input":audio_future_input})
+      #output = output[:, 0:1, :]  # only keep the first frame
       outputs.append(output)
       # update motion input
-      motion_input = tf.concat([motion_input[:, 1:, :], output], axis=1)
+      motion_input = tf.concat([motion_input[:, 20:, :], output], axis=1)
     return tf.concat(outputs, axis=1)
       
   def loss(self, target, pred):

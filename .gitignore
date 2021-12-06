@@ -106,5 +106,9 @@ venv.bak/
 data/
 checkpoints/
 outputs/
-
+eval_checkpoints/
+video/
+*.mp4
 .DS_Store
+#vscode
+.vscode

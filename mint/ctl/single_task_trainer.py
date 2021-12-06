@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """A trainer object that can train models with a single output."""
-
+from keras import backend as K
 from absl import logging
 from third_party.tf_models import orbit
 import tensorflow as tf
-
+from keras.utils.vis_utils import plot_model
 
 class IdentityMetric(tf.keras.metrics.Metric):
   """Keras metric to report value at any instant."""
@@ -149,11 +149,13 @@ class SingleTaskTrainer(orbit.StandardTrainer):
         for name in sorted(inputs.keys()):
           logging.info('  name = %s', name)
         output = self.model(inputs, training=True)
+        #print(K.print_tensor(output))
 
         # Get the average per-batch loss and scale it down by the number of
         # replicas. This ensures that we don't end up multiplying our loss by
         # the number of workers - gradients are summed, not averaged, across
         # replicas during the apply_gradients call.
+        print(K.print_tensor(target))
         loss = tf.reduce_mean(self.loss_fn(target, output))
         loss = loss / self.strategy.num_replicas_in_sync
 
