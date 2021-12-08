@@ -149,13 +149,13 @@ class SingleTaskTrainer(orbit.StandardTrainer):
         for name in sorted(inputs.keys()):
           logging.info('  name = %s', name)
         output = self.model(inputs, training=True)
-        #print(K.print_tensor(output))
+        #print("output:",K.print_tensor(output))
 
         # Get the average per-batch loss and scale it down by the number of
         # replicas. This ensures that we don't end up multiplying our loss by
         # the number of workers - gradients are summed, not averaged, across
         # replicas during the apply_gradients call.
-        print(K.print_tensor(target))
+        #print("target:",K.print_tensor(target))
         loss = tf.reduce_mean(self.loss_fn(target, output))
         loss = loss / self.strategy.num_replicas_in_sync
 

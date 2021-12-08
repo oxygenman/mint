@@ -40,6 +40,7 @@ class FACTModel(multi_modal_model.MultiModalModel):
     self.config = copy.deepcopy(config)
     self.is_training = is_training
     print(self.config.modality)
+    #读取模型配置文件
     (self.feature_to_model, self.feature_to_params, self.feature_to_preprocessor
     ) = multi_modal_model_util.build_modalities_model(self.config.modality)
     self.feature_to_output=self.config.cross_modal_model.output_layer
@@ -76,7 +77,11 @@ class FACTModel(multi_modal_model.MultiModalModel):
     self.decoder_config=self.feature_to_model["motion"]["transformer_layer"]
     #
     self.target_length=20
-    self.decoder=origin_transformer_model.Decoder(self.decoder_config.num_hidden_layers,self.decoder_config.hidden_size,self.decoder_config.num_attention_heads,self.decoder_config.hidden_size,self.target_length)
+    self.decoder=origin_transformer_model.Decoder(num_layers=self.decoder_config.num_hidden_layers,
+                                                  d_model=self.decoder_config.hidden_size,
+                                                  num_heads=self.decoder_config.num_attention_heads,
+                                                  dff=self.decoder_config.hidden_size,
+                                                  maximum_position_encoding=self.target_length)
     self.final_layer = tf.keras.layers.Dense(self.feature_to_output.out_dim)
 
 

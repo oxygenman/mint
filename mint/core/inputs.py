@@ -39,6 +39,7 @@ def create_input(train_eval_config,
   batch_size = train_eval_config.batch_size
   data_files = tf.io.gfile.glob(dataset_config.data_files)
   name_to_features = {}
+  #把dataset_config读到字典里
   modality_to_params = inputs_util.get_modality_to_param_dict(dataset_config)
   #modality_to_params{"motion":{},"audio":{}}
 
@@ -55,7 +56,7 @@ def create_input(train_eval_config,
           f"{modality}_sequence_shape": tf.io.FixedLenFeature([2], tf.int64),
           f"{modality}_name": tf.io.FixedLenFeature([], tf.string),
       })
-  #{motion_sequence:{},audio_sequence:{}}
+  #name_to_features:{motion_sequence:[],motion_sequence_shape:[],...}
   #配置文件中么有这个key
   if dataset_config.data_target_field:
     name_to_features.update(
@@ -80,6 +81,7 @@ def create_input(train_eval_config,
   # Function to decode a record
   def _decode_and_reshape_record(record):
     """Decodes a record to a TensorFlow example."""
+    #解析tfrecord中的数据
     example = tf.io.parse_single_example(record, name_to_features)
     # tf.Example only supports tf.int64, but the TPU only supports tf.int32.
     # So cast all int64 to int32.

@@ -69,9 +69,10 @@ def fact_preprocessing(example, modality_to_params, is_training):
 
   # Pad the input motion translation from 3-dim to 9-dim.
   #why?
-  motion_dim += 6
-  example["motion_sequence"] = tf.pad(example["motion_sequence"],
-                                      [[0, 0], [6, 0]])
+  #先把这个pading 删掉试一下，就用219维的motion特征
+  #motion_dim += 6
+  #example["motion_sequence"] = tf.pad(example["motion_sequence"],
+  #                                   [[0, 0], [6, 0]])
   if is_training:
     windows_size = tf.maximum(motion_input_length,
                          motion_target_shift + motion_target_length)

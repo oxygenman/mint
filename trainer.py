@@ -137,12 +137,14 @@ def distribution_strategy():
 
 def train():
   """Trains model."""
+  #read the config file
   configs = config_util.get_configs_from_pipeline_file(FLAGS.config_path)
 
   model_config = configs['model']
   train_config = configs['train_config']
 
   strategy = distribution_strategy()
+  #get the dataset 
   dataset = strategy.distribute_datasets_from_function(get_dataset_fn(configs))
   with strategy.scope():
     model_ = model_builder.build(model_config, True)
@@ -165,7 +167,7 @@ def train():
   controller = orbit.Controller(
       trainer=trainer,
       strategy=strategy,
-      steps_per_loop=10,
+      steps_per_loop=1000,
       checkpoint_manager=tf.train.CheckpointManager(
           tf.train.Checkpoint(optimizer=optimizer, model=model_),
           directory=FLAGS.model_dir,
@@ -173,7 +175,7 @@ def train():
           step_counter=trainer.optimizer.iterations,
           max_to_keep=5),
       summary_dir=FLAGS.model_dir,
-      summary_interval=10,
+      summary_interval=1000,
       global_step=trainer.optimizer.iterations)
   controller.train(1)
   controller.train(FLAGS.steps - 1)
